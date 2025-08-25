@@ -3,6 +3,7 @@
   import Toast from "./lib/Toast.svelte";
   import { showToast as toast } from "./lib/toast";
   import PieChart from "./lib/PieChart.svelte";
+  import GlobalStyles from "./styles/GlobalStyles.svelte";
 
   const socket = io();
 
@@ -102,11 +103,19 @@
   });
 
   let topic = "";
+  let topicInput = ""; // Local input value for typing
   $: topic = state?.topic || "";
+  $: topicInput = topic; // Sync input with state topic
 
   function setTopic() {
     if (!state) return;
-    socket.emit("setTopic", { code: state.code, topic });
+    socket.emit("setTopic", { code: state.code, topic: topicInput });
+  }
+
+  function clearTopic() {
+    if (!state) return;
+    topicInput = "";
+    socket.emit("setTopic", { code: state.code, topic: "" });
   }
 
   function cast(value) {
@@ -181,6 +190,7 @@
       myNotes = [""];
       notesEditing = true;
       myVote = null;
+      topicInput = ""; // Clear topic input on reset
       socket.emit("reset", { code: state.code });
     }
   }
@@ -196,11 +206,15 @@
   }
 </script>
 
+<GlobalStyles />
+
 <div class="container">
   {#if view === "auth"}
     <div class="header section">
       <h1>🃏 Scrum Poker</h1>
-      <div class="subtitle">Warm theme · Sockets powered · No accounts</div>
+      <div class="subtitle">
+        Lightweight · Built-in svelte and socket.io · No accounts needed
+      </div>
     </div>
 
     {#if role === "none"}
@@ -251,18 +265,19 @@
   {/if}
 
   {#if view === "app" && state}
+    <div class="header section">
+      <h1 class="app">🃏 Scrum Poker</h1>
+    </div>
     {#if role === "host"}
       <div class="row">
         <div class="card col">
           <div class="title">Facilitator controls</div>
-          <div class="grid one">
-            <select bind:this={deckSelect}>
+          <div class="hstack mt-2">
+            <select bind:this={deckSelect} style="flex:1">
               <option value="Fibonacci">Fibonacci</option>
               <option value="T‑Shirt">T‑Shirt</option>
               <option value="0–13">0–13</option>
             </select>
-          </div>
-          <div class="hstack mt-2">
             <button class="small" on:click={() => applyDeck(deckSelect.value)}
               >Apply deck</button
             >
@@ -285,11 +300,25 @@
         {#if role === "host"}
           <div class="hstack mt-2">
             <input
-              bind:value={topic}
+              bind:value={topicInput}
               placeholder="Story / ticket / topic"
               style="flex:1"
             />
-            <button class="small" on:click={setTopic}>Save</button>
+            <button class="small" on:click={setTopic}>Set</button>
+            <button class="small ghost" on:click={clearTopic}>Clear</button>
+          </div>
+        {/if}
+
+        {#if role === "participant"}
+          <div class="mt-2">
+            <div class="muted">Current Topic</div>
+            <div class="topic-display">
+              {#if topic && topic.trim()}
+                <div class="topic-text">{topic}</div>
+              {:else}
+                <div class="muted">No topic set</div>
+              {/if}
+            </div>
           </div>
         {/if}
 
@@ -486,312 +515,3 @@
   {/if}
   <Toast position="top-right" />
 </div>
-
-<style>
-  :root {
-    --bg-primary: #03071e;
-    --bg-secondary: #370617;
-    --bg-tertiary: #6a040f;
-    --card-bg: #370617;
-    --card-border: #6a040f;
-    --text-primary: #feedcd;
-    --text-secondary: #fcc969;
-    --text-muted: #fdbb92;
-    --accent: #f48c06;
-    --accent-hover: #faa307;
-    --accent-light: #ffba08;
-    --danger: #dc2f02;
-    --success: #f48c06;
-    --warning: #faa307;
-  }
-
-  * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
-
-  :global(body) {
-    margin: 0;
-    font-family:
-      Inter,
-      system-ui,
-      -apple-system,
-      Segoe UI,
-      Roboto,
-      sans-serif;
-    background: linear-gradient(
-      135deg,
-      var(--bg-primary) 0%,
-      var(--bg-secondary) 50%,
-      var(--bg-tertiary) 100%
-    );
-    color: var(--text-primary);
-    min-height: 100vh;
-    line-height: 1.6;
-  }
-
-  .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem;
-    min-height: 100vh;
-  }
-
-  .header {
-    text-align: center;
-    margin-bottom: 3rem;
-  }
-
-  .header h1 {
-    font-size: 3rem;
-    font-weight: 800;
-    background: linear-gradient(135deg, var(--accent-light), var(--accent));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 0.5rem;
-    text-shadow: 0 4px 8px rgba(244, 140, 6, 0.3);
-  }
-
-  .subtitle {
-    color: var(--text-muted);
-    font-size: 1.1rem;
-    font-weight: 400;
-  }
-
-  .section {
-    margin-bottom: 2.5rem;
-  }
-
-  .row {
-    display: flex;
-    gap: 2rem;
-    flex-wrap: wrap;
-    margin-bottom: 2rem;
-  }
-
-  .card {
-    background: linear-gradient(135deg, var(--card-bg), rgba(106, 4, 15, 0.8));
-    border: 2px solid var(--card-border);
-    border-radius: 20px;
-    padding: 2rem;
-    box-shadow:
-      0 12px 40px rgba(3, 7, 30, 0.4),
-      0 4px 12px rgba(244, 140, 6, 0.1);
-    backdrop-filter: blur(10px);
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .card::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--accent), var(--accent-light));
-    opacity: 0.6;
-  }
-
-  .card:hover {
-    transform: translateY(-2px);
-    box-shadow:
-      0 16px 50px rgba(3, 7, 30, 0.5),
-      0 6px 16px rgba(244, 140, 6, 0.15);
-  }
-
-  .title {
-    font-size: 1.125rem;
-    font-weight: 800;
-    margin-bottom: 0.5rem;
-    color: var(--text-secondary);
-  }
-  .muted {
-    color: var(--text-muted);
-  }
-  .badge {
-    font-size: 12px;
-    opacity: 0.85;
-    color: var(--text-secondary);
-  }
-
-  .grid {
-    display: grid;
-    gap: 1rem;
-  }
-  .two {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .hstack {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-
-  .cards {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-top: 0.5rem;
-  }
-  .card-btn {
-    padding: 18px 20px;
-    border-radius: 16px;
-    background: rgba(250, 163, 7, 0.08);
-    border: 1px solid rgba(250, 163, 7, 0.35);
-    font-weight: 800;
-    min-width: 64px;
-    text-align: center;
-    color: var(--text-primary);
-    transition: all 0.2s ease;
-  }
-  .card-btn:hover,
-  .card-btn.active {
-    transform: translateY(-1px);
-    border-color: var(--accent);
-    box-shadow: 0 6px 16px rgba(244, 140, 6, 0.2);
-  }
-
-  .user {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 10px 12px;
-    border: 1px solid rgba(250, 163, 7, 0.25);
-    border-radius: 12px;
-    background: rgba(106, 4, 15, 0.35);
-  }
-  .user .vote {
-    font-weight: 800;
-    color: var(--accent-light);
-  }
-
-  input,
-  select,
-  button {
-    background: rgba(3, 7, 30, 0.4);
-    color: var(--text-primary);
-    border: 1px solid rgba(250, 163, 7, 0.25);
-    padding: 12px 14px;
-    border-radius: 12px;
-    outline: none;
-  }
-  input:focus,
-  select:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(244, 140, 6, 0.25);
-  }
-  button {
-    cursor: pointer;
-    font-weight: 700;
-  }
-  button.primary {
-    background: linear-gradient(135deg, var(--accent), var(--accent-light));
-    color: #1a1a1a;
-    border: none;
-  }
-  button.ghost {
-    background: transparent;
-    border-color: rgba(250, 163, 7, 0.35);
-    color: var(--text-secondary);
-  }
-  button.small {
-    padding: 8px 12px;
-    font-size: 12px;
-    border-radius: 10px;
-  }
-
-  input:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  /* layout helpers */
-  .col {
-    flex: 1;
-    min-width: 300px;
-  }
-  .col-wide {
-    flex: 2;
-    min-width: 360px;
-  }
-  .between {
-    justify-content: space-between;
-  }
-  .mt-1 {
-    margin-top: 0.5rem;
-  }
-  .mt-2 {
-    margin-top: 0.75rem;
-  }
-  .mt-3 {
-    margin-top: 1rem;
-  }
-  /* Notes section styles */
-  .notes-header {
-    margin-bottom: 0.75rem;
-  }
-  .note-icon svg {
-    display: block;
-  }
-  .note-list {
-    gap: 0.75rem;
-  }
-  .note-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  .note-input {
-    flex: 1;
-    padding: 12px 14px;
-    border-radius: 12px;
-  }
-  .notes-footer {
-    margin-top: 0.75rem;
-  }
-
-  .icon-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 8px 10px;
-    border-radius: 10px;
-    background: transparent;
-    color: var(--text-secondary);
-    border: 1px solid rgba(250, 163, 7, 0.35);
-  }
-  .icon-btn:hover {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(244, 140, 6, 0.12);
-  }
-  .icon-btn svg {
-    pointer-events: none;
-  }
-  .icon-btn .btn-text {
-    font-size: 12px;
-    font-weight: 700;
-  }
-  .add-btn {
-    color: var(--text-secondary);
-  }
-
-  .save-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  input:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-  }
-
-  .note-readonly {
-    padding: 0.5rem 0;
-  }
-</style>

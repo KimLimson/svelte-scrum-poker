@@ -271,6 +271,7 @@ io.on("connection", (socket) => {
       u.notes = []; // Clear notes on reset
     }
     room.revealed = false;
+    room.topic = ""; // Clear topic on reset
     emitState(code);
   });
 
