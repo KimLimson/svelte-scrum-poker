@@ -298,15 +298,23 @@
         </div>
 
         {#if role === "host"}
-          <div class="hstack mt-2">
-            <input
-              bind:value={topicInput}
-              placeholder="Story / ticket / topic"
-              style="flex:1"
-            />
-            <button class="small" on:click={setTopic}>Set</button>
-            <button class="small ghost" on:click={clearTopic}>Clear</button>
-          </div>
+          {#if !topic}
+            <div class="hstack mt-2">
+              <input
+                bind:value={topicInput}
+                placeholder="Story / ticket / topic"
+                style="flex:1"
+              />
+              <button class="small" on:click={setTopic}>Set</button>
+            </div>
+          {:else}
+            <div class="mt-2">
+              <div class="muted">Current Topic</div>
+              <div class="topic-display">
+                <div class="topic-text">{topic}</div>
+              </div>
+            </div>
+          {/if}
         {/if}
 
         {#if role === "participant"}
