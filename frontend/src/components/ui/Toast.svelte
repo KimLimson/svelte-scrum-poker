@@ -1,5 +1,5 @@
 <script>
-  import { toasts, dismissToast } from './toast';
+  import { toasts, dismissToast } from '../../utils/toast.js';
   let list = [];
   const unsub = toasts.subscribe(v => list = v);
   export let position = 'top-right';
