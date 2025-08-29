@@ -1,6 +1,7 @@
 import { io } from "socket.io-client";
 import { updateGameState, currentView, userRole } from '../stores/gameStore.js';
 import { showToast as toast } from '../utils/toast.js';
+import { ROLES, VIEWS } from '../utils/constants.js';
 
 class SocketService {
   constructor() {
@@ -35,6 +36,12 @@ class SocketService {
     // Error messages
     this.socket.on("errorMsg", (message) => {
       toast({ message: message, type: "error" });
+      
+      // If room not found, return to role selection
+      if (message === "Room not found.") {
+        userRole.set(ROLES.NONE);
+        currentView.set(VIEWS.AUTH);
+      }
     });
 
     // Game state updates
